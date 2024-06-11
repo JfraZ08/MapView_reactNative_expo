@@ -1,24 +1,50 @@
 import React, { useState, useEffect } from 'react';
-import { Platform, Text, View, StyleSheet } from 'react-native';
-import * as Device from 'expo-device';
+import { Platform, Text, StyleSheet, View } from 'react-native';
+import { Picker } from '@react-native-picker/picker'
 import * as Location from 'expo-location';
 import MapView, { Marker } from 'react-native-maps';
 
+
+
+// type LocationCoords = {
+//   latitude: number;
+//   longitude: number;
+// };
+
+type Region = {
+  latitude: number;
+  longitude: number;
+  latitudeDelta: number;
+  longitudeDelta: number;
+};
+
+
 export default function App() {
+
   const [location, setLocation] = useState<Location.LocationObject |null>(null);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [searchResult, setSearchResult] = useState<any[]>([]);
+  const [selectedLocation, setSelectedLocation] = useState<Region | null>(null);
 
   useEffect(() => {
     (async () => {
-      if (Platform.OS === 'android' && !Device.isDevice) {
-        setErrorMsg(
-          "Oops, this will not work on Snack in an Android Emulator. Try it on your device!"
-        );
-        return;
+      if(tata.length >= 3){ // tata.length >= 3
+        const API_URL=`https://api-adresse.data.gouv.fr/search/?q=${tata}&type=street&limit=10`;
+        fetch(API_URL)
+          .then(response => response.json())
+          .then(data => {
+            setSearchResult(data.features)
+          })
+          .catch(error => console.error('Error fatching data', error))
       }
+    })();
+  }, [tata]);// [tata]
+
+  
+  useEffect(() => {
+    (async () => {
+      
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        setErrorMsg('Permission to access location was denied');
         return;
       }
 
@@ -27,8 +53,20 @@ export default function App() {
     })();
   }, []);
 
+  const handlePickerChange =(itemValue: any, itemIndex: any) => {
+    const selectedFeature = searchResult[itemIndex];
+    if (selectedFeature) {
+      setSelectedLocation({
+        latitude: selectedFeature.geometry.coordinates[1],
+        longitude: selectedFeature.geometry.coordinates[0],
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01
+      })
+    }
+  }
+
   
-  let initialRegion = {
+  let initialRegion : Region= {
     latitude: 45.186552,
     longitude: 5.754637,
     latitudeDelta: 0.01,
@@ -55,12 +93,29 @@ export default function App() {
   // } else if (location) {
   //   text = JSON.stringify(location);
   // }
-
   return (
-    <View style={styles.container}>
+    <View>
+      {/*TextInput*/}
+      <Picker 
+      selectedValue={selectedLocation}
+      style={{ height: 50, width: '100%', color: 'white', }}
+      onValueChange={handlePickerChange}
+      >
+        {
+          searchResult.map((result, index) => (
+
+            <Picker.Item 
+            key={index}
+            label={result.properties.label}
+            value={result}
+            />
+          ))
+        }
+      </Picker>
       <MapView
       style={styles.map}
       initialRegion={initialRegion}
+      region={selectedLocation || initialRegion}
       >
       {location && (
         <Marker 
@@ -68,8 +123,13 @@ export default function App() {
             latitude: location.coords.latitude,
             longitude: location.coords.longitude
           }}
-          title={marketTitle}
+          title="Votre position"
         />
+      )}
+      {selectedLocation && (
+        <Marker 
+        coordinate={selectedLocation}
+        title='Adresse séélectionnée'/>
       )}
       </MapView>
     </View>
@@ -81,13 +141,13 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 20,
+    
   },
   map: {
     width: '100%',
     height: '100%'
-  }
+  },
 });
 
 //stocker info api tableau
-
+//fetch de l'api
