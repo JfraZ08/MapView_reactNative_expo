@@ -44,6 +44,11 @@ export default function App() {
     }
   }
 
+  let marketTitle = "Votre position";
+  if (location) {
+    marketTitle = `Latitude: ${location.coords.latitude}, Longitude ${location.coords.longitude}`
+  }
+
   // let text = 'Waiting..';
   // if (errorMsg) {
   //   text = errorMsg;
@@ -63,7 +68,7 @@ export default function App() {
             latitude: location.coords.latitude,
             longitude: location.coords.longitude
           }}
-          title='Votre position'
+          title={marketTitle}
         />
       )}
       </MapView>
@@ -84,4 +89,5 @@ const styles = StyleSheet.create({
   }
 });
 
-//location.coords
+//stocker info api tableau
+
