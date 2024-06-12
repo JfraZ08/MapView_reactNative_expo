@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Platform, Text, StyleSheet, View } from 'react-native';
-import { Picker } from '@react-native-picker/picker'
+import { Platform, Text, StyleSheet, View, TextInput, TouchableOpacity, FlatList } from 'react-native';
 import * as Location from 'expo-location';
 import MapView, { Marker } from 'react-native-maps';
 
@@ -20,15 +19,17 @@ type Region = {
 
 
 export default function App() {
-
+  
   const [location, setLocation] = useState<Location.LocationObject |null>(null);
   const [searchResult, setSearchResult] = useState<any[]>([]);
   const [selectedLocation, setSelectedLocation] = useState<Region | null>(null);
-
+  const [searchText, setSearchText] = useState<string>(''); // État pour stocker le texte de recherche
+  
   useEffect(() => {
-    (async () => {
-      if(tata.length >= 3){ // tata.length >= 3
-        const API_URL=`https://api-adresse.data.gouv.fr/search/?q=${tata}&type=street&limit=10`;
+    (async () => { 
+      if(searchText.length >= 3){
+
+        const API_URL=`https://api-adresse.data.gouv.fr/search/?q=${searchText}&type=street&limit=10`; // https://api-adresse.data.gouv.fr/search/?q=${tata}&type=street&limit=10
         fetch(API_URL)
           .then(response => response.json())
           .then(data => {
@@ -37,7 +38,7 @@ export default function App() {
           .catch(error => console.error('Error fatching data', error))
       }
     })();
-  }, [tata]);// [tata]
+  }, [searchText]); 
 
   
   useEffect(() => {
@@ -53,16 +54,13 @@ export default function App() {
     })();
   }, []);
 
-  const handlePickerChange =(itemValue: any, itemIndex: any) => {
-    const selectedFeature = searchResult[itemIndex];
-    if (selectedFeature) {
+  const handleLocationSelect =(feature: any) => {
       setSelectedLocation({
-        latitude: selectedFeature.geometry.coordinates[1],
-        longitude: selectedFeature.geometry.coordinates[0],
+        latitude: feature.geometry.coordinates[1],
+        longitude: feature.geometry.coordinates[0],
         latitudeDelta: 0.01,
         longitudeDelta: 0.01
       })
-    }
   }
 
   
@@ -81,43 +79,27 @@ export default function App() {
       longitudeDelta: 0.01
     }
   }
-
-  let marketTitle = "Votre position";
-  if (location) {
-    marketTitle = `Latitude: ${location.coords.latitude}, Longitude ${location.coords.longitude}`
-  }
-
-  // let text = 'Waiting..';
-  // if (errorMsg) {
-  //   text = errorMsg;
-  // } else if (location) {
-  //   text = JSON.stringify(location);
-  // }
   return (
-    <View>
-      {/*TextInput*/}
-      <Picker 
-      selectedValue={selectedLocation}
-      style={{ height: 50, width: '100%', color: 'white', }}
-      onValueChange={handlePickerChange}
-      >
-        {
-          searchResult.map((result, index) => (
-
-            <Picker.Item 
-            key={index}
-            label={result.properties.label}
-            value={result}
-            />
-          ))
-        }
-      </Picker>
+    <View style={styles.container}>
+      <TextInput
+      style={styles.input}
+      placeholder='Rechercher une adresse'
+      onChangeText={setSearchText}
+      value={searchText}/>
+      <FlatList 
+      data={searchResult}
+      keyExtractor={(item,index) => index.toString()}
+      renderItem={({item}) => (
+        <TouchableOpacity style={styles.item} onPress={() => handleLocationSelect(item)}>
+          <Text style={styles.textWhite}>{item.properties.label}</Text>
+        </TouchableOpacity>
+      )}/>
       <MapView
       style={styles.map}
       initialRegion={initialRegion}
       region={selectedLocation || initialRegion}
       >
-      {location && (
+       {location && (
         <Marker 
           coordinate={{
             latitude: location.coords.latitude,
@@ -139,14 +121,34 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    
+    display: 'flex',
+    flexDirection: 'column',
+    color: 'white'
+  },
+  input: {
+    height: 40,
+    borderColor: 'gray',
+    borderWidth: 1,
+    margin: 10,
+    padding: 10,
+    color: 'white'
+  },
+  item: {
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+    color: 'white'
   },
   map: {
-    width: '100%',
-    height: '100%'
+    flex: 1,
+    borderWidth: 1,
+    borderColor: 'red',
+    color:'white'
+
   },
+  textWhite: {
+    color: 'white'
+  }
 });
 
 //stocker info api tableau
